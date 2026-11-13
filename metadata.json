@@ -1,0 +1,6 @@
+{
+  "name": "MATH LEXICON AI – Từ Điển Toán Học Anh - Việt Chuyên Sâu",
+  "description": "Từ điển chuyên ngành Toán học Anh - Việt tra cứu song song Từ điển Toán học (NXB KH&KT 1976) và Oxford Mathematics Dictionary. Tích hợp đọc công thức LaTeX, phát âm UK/US và dịch đề bài, tài liệu toán.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
