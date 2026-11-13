@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, User, School, Phone } from 'lucide-react';
 import { Sidebar, ActiveView } from './components/layout/Sidebar';
 import { HomeView } from './components/views/HomeView';
 import { DictionaryView } from './components/views/DictionaryView';
@@ -137,7 +137,8 @@ export default function App() {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 px-4 sm:px-8 py-6 overflow-y-auto">
+        <main className="flex-1 px-4 sm:px-8 py-6 overflow-y-auto flex flex-col">
+          <div className="flex-1">
           {/* Mobile menu button (only visible on screens smaller than lg) */}
           <div className="lg:hidden mb-4 flex items-center justify-between">
             <button
@@ -220,6 +221,34 @@ export default function App() {
           {activeView === 'data_admin' && (
             <DataManagementView onSelectTerm={setSelectedTerm} />
           )}
+          </div>
+
+          {/* Author Footer */}
+          <footer className="mt-10 pt-5 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3.5 shadow-2xs">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
+                  <User className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span>Tác giả: Thầy Ngô Thanh Hùng</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <School className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                  <span>Giáo viên trường THCS Bình San - Mỹ Đức, Hà Tiên, An Giang</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 sm:justify-end">
+                <Phone className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>ĐT, Zalo:</span>
+                <a
+                  href="tel:0913117321"
+                  className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  0913117321
+                </a>
+              </div>
+            </div>
+          </footer>
         </main>
       </div>
 
