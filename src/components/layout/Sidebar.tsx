@@ -15,7 +15,8 @@ import {
   Boxes,
   GraduationCap,
   Sun,
-  Moon
+  Moon,
+  PanelLeftClose
 } from 'lucide-react';
 
 export type ActiveView =
@@ -37,6 +38,8 @@ interface SidebarProps {
   onSelectView: (view: ActiveView) => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
+  isDesktopHidden?: boolean;
+  onToggleDesktopHidden?: () => void;
   favoritesCount: number;
   historyCount: number;
   isDarkMode?: boolean;
@@ -48,6 +51,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectView,
   isOpenMobile,
   onCloseMobile,
+  isDesktopHidden = false,
+  onToggleDesktopHidden,
   favoritesCount,
   historyCount,
   isDarkMode,
@@ -165,15 +170,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={onToggleDarkMode}
               className="p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               title={isDarkMode ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+              aria-label={isDarkMode ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
             >
               {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
           )}
 
+          {onToggleDesktopHidden && (
+            <button
+              type="button"
+              onClick={onToggleDesktopHidden}
+              className="hidden lg:inline-flex items-center justify-center p-1.5 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Ẩn menu bên trái để mở rộng nội dung"
+              aria-label="Ẩn menu bên trái"
+            >
+              <PanelLeftClose className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Mobile close */}
           <button
+            type="button"
             onClick={onCloseMobile}
             className="p-1.5 lg:hidden text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+            aria-label="Đóng menu"
           >
             <X className="w-5 h-5" />
           </button>
@@ -252,9 +272,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:block w-64 shrink-0 sticky top-0 h-screen">
-        {content}
-      </aside>
+      {!isDesktopHidden && (
+        <aside className="hidden lg:block w-64 shrink-0 sticky top-0 h-screen">
+          {content}
+        </aside>
+      )}
 
       {/* Mobile Drawer */}
       {isOpenMobile && (

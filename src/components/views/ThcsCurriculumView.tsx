@@ -18,6 +18,8 @@ import {
   ListChecks,
   ExternalLink,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import {
   ThcsChapter,
@@ -110,6 +112,7 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [exprCategory, setExprCategory] = useState<ExpressionCategory | 'all'>('all');
   const [revealedAnswers, setRevealedAnswers] = useState<Record<string, boolean>>({});
+  const [isTocHidden, setIsTocHidden] = useState(false);
 
   // AI Teaching Assistant state
   const [customPrompt, setCustomPrompt] = useState('');
@@ -208,7 +211,7 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
   }, [activeLesson, exprCategory]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-12">
       {/* Header & Controls Card */}
       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -318,26 +321,38 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
 
       {/* Two-Zone Pedagogical Workbench */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Zone (~30% / 4 cols): Chapter & Lesson Curriculum Tree */}
-        <aside className="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-          <div className="px-4 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-800/40">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+        {/* Left Zone: Chapter & Lesson Curriculum Tree */}
+        {!isTocHidden && (
+        <aside className="lg:col-span-4 xl:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+          <div className="px-4 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 bg-slate-50/80 dark:bg-slate-800/40">
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate">
                 Mục lục Toán Lớp {selectedGrade}
               </h2>
               <p className="text-xs text-slate-500 tabular-nums">
                 {gradeBook.totalChapters} chương • {gradeBook.totalLessons} bài trong giáo trình
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => onOpenThcsPdf?.(selectedGrade, 1)}
-              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
-              title={`Xem sách PDF Toán ${selectedGrade}`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              PDF gốc
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => onOpenThcsPdf?.(selectedGrade, 1)}
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                title={`Xem sách PDF Toán ${selectedGrade}`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsTocHidden(true)}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Ẩn mục lục bài học"
+                aria-label="Ẩn mục lục bài học"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[68vh] overflow-y-auto">
@@ -406,17 +421,30 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
             })}
           </div>
         </aside>
+        )}
 
-        {/* Right Zone (~70% / 8 cols): Active Lesson Bilingual Workspace */}
-        <div className="lg:col-span-8 space-y-5">
+        {/* Right Zone: Active Lesson Bilingual Workspace */}
+        <div className={`${isTocHidden ? 'lg:col-span-12' : 'lg:col-span-8 xl:col-span-9'} space-y-5`}>
           {activeChapter && activeLesson && (
             <>
               {/* Lesson Overview Card */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 tabular-nums">
-                      Toán Lớp {selectedGrade} • Chương {activeChapter.chapterNumber}: {activeChapter.titleVi} • Bài {activeLesson.lessonNumber}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isTocHidden && (
+                        <button
+                          type="button"
+                          onClick={() => setIsTocHidden(false)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                          <PanelLeftOpen className="w-3.5 h-3.5" />
+                          Hiện mục lục
+                        </button>
+                      )}
+                      <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 tabular-nums">
+                        Toán Lớp {selectedGrade} • Chương {activeChapter.chapterNumber}: {activeChapter.titleVi} • Bài {activeLesson.lessonNumber}
+                      </div>
                     </div>
                     <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                       <MathText text={activeLesson.titleEn} onWordClick={onSelectWord} />
@@ -426,7 +454,7 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <PronounceButton
                       text={cleanMathForSpeech(activeLesson.titleEn)}
                       accent="en-US"
@@ -483,7 +511,7 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
 
               {/* Section Navigation Tabs */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-                <div className="flex overflow-x-auto no-scrollbar border-b border-slate-200 dark:border-slate-800 px-2 sm:px-4">
+                <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-5 bg-slate-50/40 dark:bg-slate-900/40">
                   {[
                     {
                       id: 'vocab' as LessonTab,
@@ -523,7 +551,7 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
                         key={tab.id}
                         type="button"
                         onClick={() => setActiveTab(tab.id)}
-                        className={`py-3.5 px-3 sm:px-4 border-b-2 text-xs sm:text-sm font-semibold flex items-center gap-2 whitespace-nowrap cursor-pointer transition-colors ${
+                        className={`py-3 px-3 sm:px-3.5 border-b-2 text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                           isActive
                             ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
                             : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'

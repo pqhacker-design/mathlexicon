@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Menu, User, School, Phone } from 'lucide-react';
+import { Menu, User, School, Phone, PanelLeftOpen, Sun, Moon } from 'lucide-react';
 import { Sidebar, ActiveView } from './components/layout/Sidebar';
 import { HomeView } from './components/views/HomeView';
 import { DictionaryView } from './components/views/DictionaryView';
@@ -34,6 +34,13 @@ export default function App() {
     );
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDesktopSidebarHidden, setIsDesktopSidebarHidden] = useState<boolean>(() => {
+    return localStorage.getItem('edulexicon_sidebar_hidden') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('edulexicon_sidebar_hidden', isDesktopSidebarHidden ? 'true' : 'false');
+  }, [isDesktopSidebarHidden]);
 
   // Extra parameters passed when navigating between views
   const [navParams, setNavParams] = useState<{
@@ -124,12 +131,14 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors flex flex-col">
       {/* Main Body with Sidebar + View Container */}
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
+      <div className="flex-1 flex w-full">
         <Sidebar
           activeView={activeView}
           onSelectView={(v) => handleNavigate(v)}
           isOpenMobile={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
+          isDesktopHidden={isDesktopSidebarHidden}
+          onToggleDesktopHidden={() => setIsDesktopSidebarHidden(true)}
           favoritesCount={favCount}
           historyCount={historyCount}
           isDarkMode={isDarkMode}
@@ -137,19 +146,48 @@ export default function App() {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 px-4 sm:px-8 py-6 overflow-y-auto flex flex-col">
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-5 overflow-y-auto flex flex-col">
           <div className="flex-1">
-          {/* Mobile menu button (only visible on screens smaller than lg) */}
-          <div className="lg:hidden mb-4 flex items-center justify-between">
+          {/* Mobile menu button + Desktop restore-menu bar when sidebar is hidden */}
+          <div className={`mb-4 flex items-center justify-between gap-3 ${isDesktopSidebarHidden ? 'flex' : 'lg:hidden'}`}>
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-2xs cursor-pointer"
+              className="lg:hidden inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-2xs cursor-pointer"
               aria-label="Mở menu điều hướng"
             >
               <Menu className="w-4 h-4" />
               <span>Menu</span>
             </button>
+
+            {isDesktopSidebarHidden && (
+              <div className="hidden lg:flex items-center justify-between w-full gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsDesktopSidebarHidden(false)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                    aria-label="Hiện menu bên trái"
+                  >
+                    <PanelLeftOpen className="w-4 h-4" />
+                    <span>Hiện menu</span>
+                  </button>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                    MATH LEXICON AI
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-medium transition-colors cursor-pointer"
+                  title={isDarkMode ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+                >
+                  {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+                  <span>{isDarkMode ? 'Sáng' : 'Tối'}</span>
+                </button>
+              </div>
+            )}
           </div>
           {activeView === 'home' && (
             <HomeView
@@ -225,7 +263,7 @@ export default function App() {
 
           {/* Author Footer */}
           <footer className="mt-10 pt-5 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
-            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3.5 shadow-2xs">
+            <div className="max-w-[1600px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3.5 shadow-2xs">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
                   <User className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
