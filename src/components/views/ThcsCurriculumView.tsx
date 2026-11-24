@@ -20,6 +20,7 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  KeyRound,
 } from 'lucide-react';
 import {
   ThcsChapter,
@@ -35,7 +36,8 @@ import {
 } from '../../data/thcsCurriculum';
 import { MathText } from '../common/MathText';
 import { PronounceButton } from '../common/PronounceButton';
-import { ApiService, ThcsAssistResponse } from '../../services/apiService';
+import { ApiService, ThcsAssistResponse, isApiKeyError } from '../../services/apiService';
+import { requestOpenApiKeyModal } from '../../services/userApiKeyStorage';
 
 interface ThcsCurriculumViewProps {
   initialGrade?: ThcsGradeNumber;
@@ -119,6 +121,7 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
   const [aiResult, setAiResult] = useState<ThcsAssistResponse | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [isAiKeyError, setIsAiKeyError] = useState(false);
 
   // Sync grade changes when initialGrade prop updates
   useEffect(() => {
@@ -187,6 +190,7 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
     if (!activeChapter || !activeLesson) return;
     setIsLoadingAi(true);
     setAiError(null);
+    setIsAiKeyError(false);
     try {
       const data = await ApiService.generateThcsAssist({
         grade: selectedGrade,
@@ -198,6 +202,7 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
       });
       setAiResult(data);
     } catch (err: any) {
+      setIsAiKeyError(isApiKeyError(err));
       setAiError(err?.message || 'Không thể kết nối trợ lý AI.');
     } finally {
       setIsLoadingAi(false);
@@ -1017,8 +1022,18 @@ export const ThcsCurriculumView: React.FC<ThcsCurriculumViewProps> = ({
                         </div>
 
                         {aiError && (
-                          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs border border-rose-200 dark:border-rose-900">
-                            {aiError}
+                          <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs border border-rose-200 dark:border-rose-900 space-y-2.5">
+                            <p>{aiError}</p>
+                            {isAiKeyError && (
+                              <button
+                                type="button"
+                                onClick={() => requestOpenApiKeyModal()}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+                              >
+                                <KeyRound className="w-3.5 h-3.5" />
+                                Nhập Gemini API Key cá nhân
+                              </button>
+                            )}
                           </div>
                         )}
 

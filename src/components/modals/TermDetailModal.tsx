@@ -12,14 +12,16 @@ import {
   GraduationCap,
   FileText,
   Compass,
-  Code
+  Code,
+  KeyRound
 } from 'lucide-react';
 import { DictionaryTerm } from '../../types/dictionary';
 import { PronounceButton } from '../common/PronounceButton';
 import { ClickableText } from '../common/ClickableText';
 import { MathText } from '../common/MathText';
 import { DictionaryStorage } from '../../services/dictionaryStorage';
-import { ApiService, TermExplanationResponse } from '../../services/apiService';
+import { ApiService, TermExplanationResponse, isApiKeyError } from '../../services/apiService';
+import { requestOpenApiKeyModal } from '../../services/userApiKeyStorage';
 import { getDisciplineById, getGradeLabel } from '../../data/mathDisciplines';
 import { findThcsReferencesForWord } from '../../data/thcsCurriculum';
 import { ThcsGradeNumber } from '../../types/thcsCurriculum';
@@ -47,6 +49,7 @@ export const TermDetailModal: React.FC<TermDetailModalProps> = ({
   const [aiData, setAiData] = useState<TermExplanationResponse | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [isKeyMissingError, setIsKeyMissingError] = useState(false);
 
   useEffect(() => {
     if (term) {
@@ -86,6 +89,7 @@ export const TermDetailModal: React.FC<TermDetailModalProps> = ({
   const fetchAiExplanation = async () => {
     setIsLoadingAi(true);
     setAiError(null);
+    setIsKeyMissingError(false);
     try {
       const data = await ApiService.explainTerm({
         word: term.word,
@@ -95,43 +99,10 @@ export const TermDetailModal: React.FC<TermDetailModalProps> = ({
       });
       setAiData(data);
     } catch (e: any) {
-      console.warn('API error, synthesizing from local math dataset:', e);
-      // Graceful fallback from rich dictionary knowledge base
-      setAiData({
-        word: term.word,
-        ipaUk: term.ipaUk,
-        ipaUs: term.ipaUs,
-        wordType: term.wordType,
-        primaryMeaningVi: term.primaryMeaningVi,
-        khktDefVi: term.khktDefVi || term.primaryMeaningVi,
-        khktTags: term.khktTags || ['đs.', 'gt.'],
-        oxfordDefEn: term.oxfordDefEn || term.simpleDefinitionEn || 'A fundamental mathematical concept.',
-        etymology: term.etymology || 'Thuật ngữ toán học học thuật chuẩn quốc tế.',
-        gradeExplanationVi:
-          primarySense?.disciplineExplanationVi ||
-          `Thuật ngữ "${term.word}" (${term.primaryMeaningVi}) là khái niệm nền tảng trong chương trình Toán học, đóng vai trò then chốt trong việc thiết lập các định lý, công thức và giải bài toán định lượng.`,
-        formulaLatex: term.formulaLatex || primarySense?.formulaLatex,
-        commonMistakesVi:
-          term.pedagogyNotesVi ||
-          term.usageNotesVi ||
-          'Lưu ý kiểm tra kỹ điều kiện xác định và miền giá trị của biến số khi giải bài tập liên quan đến thuật ngữ này.',
-        collocations:
-          term.oxfordCollocations ||
-          term.collocations || [
-            `definition of ${term.word}`,
-            `properties of ${term.word}`,
-          ],
-        practiceExamples:
-          primarySense?.examples?.map((ex) => ({
-            en: ex.sentenceEn,
-            vi: ex.sentenceVi,
-          })) || [
-            {
-              en: `Apply the mathematical properties of ${term.word} to solve this problem.`,
-              vi: `Áp dụng các tính chất toán học của ${term.word} để giải bài toán này.`,
-            },
-          ],
-      });
+      setIsKeyMissingError(isApiKeyError(e));
+      setAiError(
+        e?.message || 'Không thể kết nối Gemini AI. Vui lòng kiểm tra lại API Key cá nhân của bạn.'
+      );
     } finally {
       setIsLoadingAi(false);
     }
@@ -540,8 +511,18 @@ export const TermDetailModal: React.FC<TermDetailModalProps> = ({
               )}
 
               {aiError && (
-                <div className="p-4 rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 text-sm border border-rose-200 dark:border-rose-900">
-                  {aiError}
+                <div className="p-4 rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 text-sm border border-rose-200 dark:border-rose-900 space-y-3">
+                  <p>{aiError}</p>
+                  {isKeyMissingError && (
+                    <button
+                      type="button"
+                      onClick={() => requestOpenApiKeyModal()}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      <KeyRound className="w-3.5 h-3.5" />
+                      Nhập Gemini API Key cá nhân
+                    </button>
+                  )}
                 </div>
               )}
 

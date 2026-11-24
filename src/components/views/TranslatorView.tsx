@@ -11,9 +11,11 @@ import {
   SplitSquareVertical,
   Loader2,
   AlertCircle,
-  Code
+  Code,
+  KeyRound
 } from 'lucide-react';
-import { ApiService } from '../../services/apiService';
+import { ApiService, isApiKeyError } from '../../services/apiService';
+import { requestOpenApiKeyModal } from '../../services/userApiKeyStorage';
 import { TranslationResult, TranslationGlossaryItem } from '../../types/dictionary';
 import { MATH_DISCIPLINES, getDisciplineById } from '../../data/mathDisciplines';
 import { PronounceButton } from '../common/PronounceButton';
@@ -53,6 +55,7 @@ export const TranslatorView: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isKeyError, setIsKeyError] = useState(false);
   const [result, setResult] = useState<TranslationResult | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -71,6 +74,7 @@ export const TranslatorView: React.FC = () => {
     if (!sourceText.trim()) return;
     setIsLoading(true);
     setError(null);
+    setIsKeyError(false);
 
     try {
       const res = await ApiService.translateText({
@@ -90,6 +94,7 @@ export const TranslatorView: React.FC = () => {
         details: `${sourceLang.toUpperCase()} → ${targetLang.toUpperCase()} (${selectedDiscipline})`,
       });
     } catch (e: any) {
+      setIsKeyError(isApiKeyError(e));
       setError(e?.message || 'Có lỗi xảy ra khi dịch thuật AI.');
     } finally {
       setIsLoading(false);
@@ -316,9 +321,21 @@ ${result.glossary
                 </p>
               </div>
             ) : error ? (
-              <div className="p-3 rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
+              <div className="p-3.5 rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 text-xs space-y-2.5 border border-rose-200 dark:border-rose-900">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+                {isKeyError && (
+                  <button
+                    type="button"
+                    onClick={() => requestOpenApiKeyModal()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    Nhập Gemini API Key cá nhân
+                  </button>
+                )}
               </div>
             ) : (
               <div className="h-full flex items-center justify-center text-slate-400 text-xs italic py-12">

@@ -16,7 +16,8 @@ import {
   GraduationCap,
   Sun,
   Moon,
-  PanelLeftClose
+  PanelLeftClose,
+  KeyRound
 } from 'lucide-react';
 
 export type ActiveView =
@@ -44,6 +45,8 @@ interface SidebarProps {
   historyCount: number;
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
+  hasApiKey?: boolean;
+  onOpenApiKeyModal?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -57,6 +60,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   historyCount,
   isDarkMode,
   onToggleDarkMode,
+  hasApiKey = false,
+  onOpenApiKeyModal,
 }) => {
   const menuItems = [
     {
@@ -248,8 +253,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Quick Access to PDF book */}
-      <div className="p-3 border-t border-slate-200 dark:border-slate-800">
+      {/* User API Key Configuration & Quick Access to PDF book */}
+      <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+        {onOpenApiKeyModal && (
+          <button
+            type="button"
+            onClick={() => {
+              onOpenApiKeyModal();
+              onCloseMobile();
+            }}
+            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer text-left space-y-1"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-100">
+                <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span>API Key AI cá nhân</span>
+              </span>
+              <span
+                className={`text-[11px] font-semibold whitespace-nowrap ${
+                  hasApiKey
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : 'text-amber-700 dark:text-amber-400'
+                }`}
+              >
+                {hasApiKey ? 'Đã lưu' : 'Chưa nhập'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+              {hasApiKey
+                ? 'Đang dùng Gemini API Key của bạn. Bấm để đổi hoặc xóa.'
+                : 'Nhập Gemini API Key của bạn để bật các tính năng AI.'}
+            </p>
+          </button>
+        )}
+
         <div
           onClick={() => {
             onSelectView('pdf_archive');
@@ -262,7 +299,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>Kho tài liệu PDF gốc</span>
           </div>
           <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-tight">
-            Từ điển KH&KT 1976 (451 trang) & Giáo trình Toán THCS Lớp 6–9 (2026).
+            Từ điển KH&amp;KT 1976 (451 trang) &amp; Giáo trình Toán THCS Lớp 6–9 (2026).
           </p>
         </div>
       </div>

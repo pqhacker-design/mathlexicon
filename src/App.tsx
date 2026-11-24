@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Menu, User, School, Phone, PanelLeftOpen, Sun, Moon } from 'lucide-react';
+import { Menu, User, School, Phone, PanelLeftOpen, Sun, Moon, KeyRound } from 'lucide-react';
 import { Sidebar, ActiveView } from './components/layout/Sidebar';
 import { HomeView } from './components/views/HomeView';
 import { DictionaryView } from './components/views/DictionaryView';
@@ -19,9 +19,15 @@ import { FavoritesView } from './components/views/FavoritesView';
 import { HistoryView } from './components/views/HistoryView';
 import { DataManagementView } from './components/views/DataManagementView';
 import { TermDetailModal } from './components/modals/TermDetailModal';
+import { ApiKeyModal } from './components/modals/ApiKeyModal';
 import { DictionaryTerm } from './types/dictionary';
 import { ThcsGradeNumber } from './types/thcsCurriculum';
 import { DictionaryStorage } from './services/dictionaryStorage';
+import {
+  hasUserApiKey,
+  subscribeApiKeyChange,
+  subscribeOpenApiKeyModal,
+} from './services/userApiKeyStorage';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>('home');
@@ -37,10 +43,21 @@ export default function App() {
   const [isDesktopSidebarHidden, setIsDesktopSidebarHidden] = useState<boolean>(() => {
     return localStorage.getItem('edulexicon_sidebar_hidden') === 'true';
   });
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [userHasApiKey, setUserHasApiKey] = useState<boolean>(() => hasUserApiKey());
 
   useEffect(() => {
     localStorage.setItem('edulexicon_sidebar_hidden', isDesktopSidebarHidden ? 'true' : 'false');
   }, [isDesktopSidebarHidden]);
+
+  useEffect(() => {
+    const unsubKey = subscribeApiKeyChange(() => setUserHasApiKey(hasUserApiKey()));
+    const unsubOpen = subscribeOpenApiKeyModal(() => setIsApiKeyModalOpen(true));
+    return () => {
+      unsubKey();
+      unsubOpen();
+    };
+  }, []);
 
   // Extra parameters passed when navigating between views
   const [navParams, setNavParams] = useState<{
@@ -143,6 +160,8 @@ export default function App() {
           historyCount={historyCount}
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+          hasApiKey={userHasApiKey}
+          onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
         />
 
         {/* Main Content Area */}
@@ -150,15 +169,29 @@ export default function App() {
           <div className="flex-1">
           {/* Mobile menu button + Desktop restore-menu bar when sidebar is hidden */}
           <div className={`mb-4 flex items-center justify-between gap-3 ${isDesktopSidebarHidden ? 'flex' : 'lg:hidden'}`}>
-            <button
-              type="button"
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-2xs cursor-pointer"
-              aria-label="Mở menu điều hướng"
-            >
-              <Menu className="w-4 h-4" />
-              <span>Menu</span>
-            </button>
+            <div className="lg:hidden flex items-center justify-between w-full gap-2">
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-2xs cursor-pointer whitespace-nowrap"
+                aria-label="Mở menu điều hướng"
+              >
+                <Menu className="w-4 h-4" />
+                <span>Menu</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsApiKeyModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-2xs cursor-pointer whitespace-nowrap"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>API Key:</span>
+                <span className={userHasApiKey ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}>
+                  {userHasApiKey ? 'Đã lưu' : 'Chưa nhập'}
+                </span>
+              </button>
+            </div>
 
             {isDesktopSidebarHidden && (
               <div className="hidden lg:flex items-center justify-between w-full gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
@@ -166,7 +199,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setIsDesktopSidebarHidden(false)}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 text-xs font-semibold shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
                     aria-label="Hiện menu bên trái"
                   >
                     <PanelLeftOpen className="w-4 h-4" />
@@ -177,15 +210,29 @@ export default function App() {
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsDarkMode(!isDarkMode)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-medium transition-colors cursor-pointer"
-                  title={isDarkMode ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
-                >
-                  {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
-                  <span>{isDarkMode ? 'Sáng' : 'Tối'}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsApiKeyModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-400 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap"
+                  >
+                    <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span>API Key AI:</span>
+                    <span className={userHasApiKey ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}>
+                      {userHasApiKey ? 'Đã lưu' : 'Chưa nhập'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsDarkMode(!isDarkMode)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
+                    title={isDarkMode ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+                  >
+                    {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+                    <span>{isDarkMode ? 'Sáng' : 'Tối'}</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -297,6 +344,12 @@ export default function App() {
         onSelectWord={handleSelectWord}
         onOpenPdfPage={(p) => handleOpenPdfPage(p, 'khkt_1976')}
         onOpenThcsLesson={handleOpenThcsLesson}
+      />
+
+      {/* User Personal Gemini API Key Configuration Modal */}
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
       />
     </div>
   );

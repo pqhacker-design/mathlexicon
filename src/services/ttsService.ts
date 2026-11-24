@@ -1,3 +1,5 @@
+import { getUserApiKey, USER_API_KEY_HEADER } from './userApiKeyStorage';
+
 export type Accent = 'en-GB' | 'en-US';
 export type VoiceName = 'Kore' | 'Puck' | 'Zephyr' | 'Fenrir' | 'Charon';
 
@@ -24,7 +26,7 @@ class TTSService {
   private isSpeaking = false;
   private isPaused = false;
 
-  // Speak text using Gemini / Cloud Neural TTS with automatic Web Speech API fallback
+  // Speak text using user's Cloud Neural TTS key if configured, with automatic Web Speech API fallback
   async speak(text: string, options: TTSOptions = {}): Promise<void> {
     const {
       accent = 'en-US',
@@ -41,8 +43,9 @@ class TTSService {
     if (!cleanText) return;
 
     const cacheKey = `${accent}_${voiceName}_${speed}_${cleanText}`;
+    const userApiKey = getUserApiKey();
 
-    if (preferGeminiNeural) {
+    if (preferGeminiNeural && userApiKey) {
       try {
         const cached = audioCache.get(cacheKey);
         if (cached) {
@@ -52,7 +55,10 @@ class TTSService {
 
         const res = await fetch('/api/gemini/tts', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            [USER_API_KEY_HEADER]: userApiKey,
+          },
           body: JSON.stringify({
             text: cleanText,
             accent,
@@ -227,9 +233,17 @@ class TTSService {
     filename = 'pronunciation.wav'
   ): Promise<boolean> {
     try {
+      const userApiKey = getUserApiKey();
+      if (!userApiKey) {
+        return false;
+      }
+
       const res = await fetch('/api/gemini/tts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          [USER_API_KEY_HEADER]: userApiKey,
+        },
         body: JSON.stringify({
           text,
           accent,
@@ -241,11 +255,7 @@ class TTSService {
 
       const data = await res.json();
       if (!data.audioBase64) {
-        if (data.fallbackToWebSpeech) {
-          alert('Chức năng tải file ngoại tuyến yêu cầu Google Cloud Speech API. Hiện tại hệ thống đang phát âm trực tiếp chuẩn qua trình duyệt.');
-          return false;
-        }
-        throw new Error('Dữ liệu âm thanh rỗng');
+        return false;
       }
 
       const mimeType = data.mimeType || 'audio/mp3';

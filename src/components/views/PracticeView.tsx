@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Sparkles,
   RotateCcw,
+  KeyRound,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { MATH_DISCIPLINES, getDisciplineById } from '../../data/mathDisciplines';
@@ -28,7 +29,8 @@ import { ThcsGradeNumber } from '../../types/thcsCurriculum';
 import { PronounceButton } from '../common/PronounceButton';
 import { MathText } from '../common/MathText';
 import { DictionaryStorage } from '../../services/dictionaryStorage';
-import { ApiService, PronunciationFeedbackResponse } from '../../services/apiService';
+import { ApiService, PronunciationFeedbackResponse, isApiKeyError } from '../../services/apiService';
+import { requestOpenApiKeyModal } from '../../services/userApiKeyStorage';
 import { ttsService } from '../../services/ttsService';
 
 type SourceMode = 'thcs_lesson' | 'discipline';
@@ -149,6 +151,7 @@ export const PracticeView: React.FC<{ currentGrade: number | 'all' }> = ({ curre
   const [recordedTranscript, setRecordedTranscript] = useState('');
   const [manualInput, setManualInput] = useState('');
   const [speechError, setSpeechError] = useState<string | null>(null);
+  const [isSpeechKeyError, setIsSpeechKeyError] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [speechFeedback, setSpeechFeedback] = useState<PronunciationFeedbackResponse | null>(null);
 
@@ -271,6 +274,7 @@ export const PracticeView: React.FC<{ currentGrade: number | 'all' }> = ({ curre
     setRecordedTranscript(spokenText.trim());
     setIsAnalyzing(true);
     setSpeechError(null);
+    setIsSpeechKeyError(false);
     try {
       const feedback = await ApiService.getPronunciationFeedback({
         word: cleanMathForSpeech(currentCard.word),
@@ -284,6 +288,7 @@ export const PracticeView: React.FC<{ currentGrade: number | 'all' }> = ({ curre
         confetti({ particleCount: 60, spread: 80, origin: { y: 0.6 } });
       }
     } catch (e: any) {
+      setIsSpeechKeyError(isApiKeyError(e));
       setSpeechError(e?.message || 'Không thể phân tích phát âm lúc này.');
     } finally {
       setIsAnalyzing(false);
@@ -857,9 +862,21 @@ export const PracticeView: React.FC<{ currentGrade: number | 'all' }> = ({ curre
 
                 {/* Inline Notice & Manual Test Fallback */}
                 {speechError && (
-                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2 text-left">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{speechError}</span>
+                  <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300 space-y-2.5 text-left">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{speechError}</span>
+                    </div>
+                    {isSpeechKeyError && (
+                      <button
+                        type="button"
+                        onClick={() => requestOpenApiKeyModal()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                        Nhập Gemini API Key cá nhân
+                      </button>
+                    )}
                   </div>
                 )}
 
